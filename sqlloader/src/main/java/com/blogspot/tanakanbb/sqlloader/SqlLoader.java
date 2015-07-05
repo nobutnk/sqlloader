@@ -3,10 +3,10 @@
  */
 package com.blogspot.tanakanbb.sqlloader;
 
-import java.math.BigDecimal;
-import java.sql.Clob;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -14,15 +14,78 @@ import java.sql.SQLException;
 import java.util.Properties;
 
 import com.blogspot.tanakanbb.sqlloader.exception.SqlLoaderException;
+import com.blogspot.tanakanbb.sqlloader.handler.DataHandler;
+import com.blogspot.tanakanbb.sqlloader.handler.HeaderHandler;
+import com.blogspot.tanakanbb.sqlloader.util.ClassLoaderUtil;
 
 /**
  * @author nobutnk
  *
  */
 public class SqlLoader {
-
-    public void execute(Properties properties, Connection connection) {
-
+    /**
+     * プロパティファイル
+     */
+    private Properties systemSettings = new Properties();
+    
+    /**
+     * ヘッダ出力有無
+     */
+    private boolean outputHeader = true;
+    
+    /**
+     * 区切り文字
+     */
+    private String separator = ",";
+    
+    /**
+     * 囲み文字
+     */
+    private String quote = "";
+    
+    /**
+     * ヘッダ出力Handler
+     */
+    private HeaderHandler headerHandler = null;
+    
+    /**
+     * データ出力Handler
+     */
+    private DataHandler dataHandler = null;
+    
+    /**
+     * メイン処理
+     * <br>
+     * <ul>
+     *   <li>ヘッダ出力有無</li>
+     *   <li>区切り文字</li>
+     *   <li>囲み文字</li>
+     *   <li></li>
+     *   <li></li>
+     *   <li></li>
+     *   <li></li>
+     * </ul>
+     * @param properties
+     * @param connection
+     */
+    public void execute(String systemSettingPath, Properties properties, Connection connection) {
+        
+        // 初期設定読み込み
+        try {
+            systemSettings.load(new FileInputStream(systemSettingPath));
+        } catch (FileNotFoundException e) {
+            // TODO エラーコード、メッセージ
+            throw new SqlLoaderException(e);
+        } catch (IOException e) {
+            // TODO エラーコード、メッセージ
+            throw new SqlLoaderException(e);
+        }
+        outputHeader = "true".equalsIgnoreCase(systemSettings.getProperty("sqlloader.outputHeader", "true"));
+        separator = systemSettings.getProperty("sqlloader.separator", ",");
+        quote = systemSettings.getProperty("sqlloader.quote", "");
+        headerHandler = ClassLoaderUtil.loadHandler(systemSettings.getProperty("sqlloader.headerHandler"));
+        dataHandler = ClassLoaderUtil.loadHandler(systemSettings.getProperty("sqlloader.dataHandler"));
+        
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         for (String name : properties.stringPropertyNames()) {
@@ -30,58 +93,23 @@ public class SqlLoader {
             try {
                 pstmt = connection.prepareStatement(sql);
                 rs = pstmt.executeQuery();
-                ResultSetMetaData  rsMetaData = rs.getMetaData();
-                int columnCount = rsMetaData.getColumnCount();
-                
-                while (rs.next()) {
-                    for (int i = 0; i < columnCount; i++) {
-                        int columnType = rsMetaData.getColumnType(i);
-                        String columnName = rsMetaData.getColumnName(i);
-                        String columnValue = getValue(columnName, columnType, rs);
-                    }
+                ResultSetMetaData rsMetaData = rs.getMetaData();
+
+                // output header.
+                if (outputHeader) {
+                    headerHandler.output(rsMetaData, separator);
                 }
                 
+                // output data
+                dataHandler.output(rsMetaData, rs, separator, quote);
+
             } catch (SQLException e) {
                 throw new SqlLoaderException(e);
+            } finally {
+                
             }
-            
+
         }
 
-    }
-    
-    public String getValue(String columnName, int type, ResultSet rs) throws SQLException {
-        String result = null;
-        switch (type) {
-        case java.sql.Types.CHAR:
-        case java.sql.Types.VARCHAR:
-            result = rs.getString(columnName);
-            break;
-        case java.sql.Types.CLOB:
-            Clob clob = rs.getClob(columnName);
-            if (clob != null) {
-                result = clob.getSubString(0, (int) clob.length());
-            }
-            break;
-        case java.sql.Types.INTEGER:
-            
-        case java.sql.Types.BIGINT:
-        case java.sql.Types.NUMERIC:
-            BigDecimal decimal = rs.getBigDecimal(columnName);
-            if (decimal != null) {
-                result = decimal.toPlainString();
-            }
-            break;
-        case java.sql.Types.DATE:
-            Date date = rs.getDate(columnName);
-            if (date != null) {
-                result = date.toString();
-            }
-        case java.sql.Types.TIME:
-        case java.sql.Types.TIMESTAMP:
-        case java.sql.Types.TIMESTAMP_WITH_TIMEZONE:
-            
-        }
-        
-        return result;
     }
 }

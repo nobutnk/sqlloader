@@ -18,4 +18,11 @@ public class SqlLoaderException extends RuntimeException {
         super(t);
     }
 
+    public SqlLoaderException(String message) {
+        super(message);
+    }
+    
+    public SqlLoaderException(String message, Throwable t) {
+        super(message, t);
+    }
 }
