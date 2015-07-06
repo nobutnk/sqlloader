@@ -56,6 +56,8 @@ public class SqlLoaderMain {
                     } catch (IOException e) {
                         e.printStackTrace();
                         System.exit(1);
+                    } finally {
+                        connectionHandler.closeConnection();
                     }
                 }
             }

@@ -27,10 +27,10 @@ public class DefaultHeaderHandlerImpl implements HeaderHandler {
         int columnCount;
         try {
             columnCount = rsMetaData.getColumnCount();
-            for (int i = 0; i < columnCount; i++) {
+            for (int i = 1; i <= columnCount; i++) {
                 String columnName = rsMetaData.getColumnName(i);
                 header.append(columnName);
-                if (i < columnCount - 1) {
+                if (i < columnCount) {
                     header.append(separator);
                 }
             }

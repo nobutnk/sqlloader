@@ -33,12 +33,12 @@ public class DefaultDataHandlerImpl implements DataHandler {
             // output data.
             while (rs.next()) {
                 StringBuilder data = new StringBuilder();
-                for (int i = 0; i < columnCount; i++) {
+                for (int i = 1; i <= columnCount; i++) {
                     int columnType = rsMetaData.getColumnType(i);
                     String columnName = rsMetaData.getColumnName(i);
                     String columnValue = getValue(columnName, columnType, rs);
                     data.append(quoteString(columnValue, quote));
-                    if (i < columnCount - 1) {
+                    if (i < columnCount) {
                         data.append(separator);
                     }
                 }

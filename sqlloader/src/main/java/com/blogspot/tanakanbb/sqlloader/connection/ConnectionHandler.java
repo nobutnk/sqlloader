@@ -41,7 +41,7 @@ public final class ConnectionHandler {
      */
     private ConnectionHandler() {
         ResourceBundle resource = ResourceBundle.getBundle("sqlloader");
-        driverName = resource.getString("jdbc.drive");
+        driverName = resource.getString("jdbc.driver");
         url = resource.getString("jdbc.url");
         userName = resource.getString("jdbc.userName");
         userPassword = resource.getString("jdbc.userPassword");
